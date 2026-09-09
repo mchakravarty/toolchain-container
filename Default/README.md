@@ -2,8 +2,6 @@
 
 This container image contains the toolchains used by default by Applicative Code. It's name is 'app-tools-default'.
 
-** The build rules for this image are work in progress **
-
 We are using the following versions:
 * Agda: 2.8.0.1
 * Agda Standard Library: 2.4
