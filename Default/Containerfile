@@ -1,0 +1,199 @@
+FROM docker.io/library/ubuntu:resolute-20260811.1
+
+ENV LANG=C.UTF-8
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
+        gcc \
+        gnupg \
+        g++ \
+        libc6-dev \
+        libffi-dev \
+        libgmp-dev \
+        libicu-dev \
+        libncurses-dev \
+        libtinfo-dev \
+        make \
+        xz-utils \
+        zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Cabal 3.18.1.0
+ARG CABAL_INSTALL='3.18.1.0'
+ARG CABAL_INSTALL_RELEASE_KEY='1E07C9A1A3088BAD47F74A3E227EE1942B0BDB95'
+
+RUN set -eux; \
+    cd /tmp; \
+    CABAL_INSTALL_TAR="cabal-install-${CABAL_INSTALL}-aarch64-linux-unknown.tar.xz"; \
+    CABAL_INSTALL_URL="https://downloads.haskell.org/~cabal/cabal-install-${CABAL_INSTALL}/${CABAL_INSTALL_TAR}"; \
+    CABAL_INSTALL_SHA256='b8333291622c0354d72adec64ccb19e13563264bae2c15c9e6657e7f9c1486e8'; \
+    CABAL_INSTALL_SHA256SUMS_URL="https://downloads.haskell.org/~cabal/cabal-install-${CABAL_INSTALL}/SHA256SUMS"; \
+    \
+    curl -fSL "${CABAL_INSTALL_URL}" -o cabal-install.tar.xz; \
+    echo "${CABAL_INSTALL_SHA256} cabal-install.tar.xz" | sha256sum --strict --check; \
+    \
+    curl -sSLO "${CABAL_INSTALL_SHA256SUMS_URL}"; \
+    curl -sSLO "${CABAL_INSTALL_SHA256SUMS_URL}.sig"; \
+    GNUPGHOME="$(mktemp -d)"; export GNUPGHOME; \
+    gpg --batch --keyserver keyserver.ubuntu.com --receive-keys "${CABAL_INSTALL_RELEASE_KEY}"; \
+    gpg --batch --keyserver keyserver.ubuntu.com --receive-keys DAFB4D8AF684143518D5051FA9AF0AAA6B87EC51; \
+    gpg --batch --verify SHA256SUMS.sig SHA256SUMS; \
+    grep "${CABAL_INSTALL_SHA256}  \./${CABAL_INSTALL_TAR}" SHA256SUMS; \
+    gpgconf --kill all; \
+    \
+    tar -xf cabal-install.tar.xz -C /usr/local/bin; \
+    \
+    rm -rf /tmp/*; \
+    \
+    cabal --version
+
+# Install GHC 9.14.1
+ARG GHC='9.14.1'
+ARG GHC_RELEASE_KEY='88B57FCF7DB53B4DB3BFA4B1588764FBE22D19C4'
+
+RUN set -eux; \
+    cd /tmp; \
+    GHC_URL="https://downloads.haskell.org/~ghc/${GHC}/ghc-${GHC}-aarch64-deb12-linux.tar.xz"; \
+    GHC_SHA256='6aa27a377451851c851eefdd869e8f5a9217b02ce66c6ca9b418b72efee28427'; \
+    \
+    curl -sSL "${GHC_URL}" -o ghc.tar.xz; \
+    echo "${GHC_SHA256} ghc.tar.xz" | sha256sum --strict --check; \
+    \
+    GNUPGHOME="$(mktemp -d)"; export GNUPGHOME; \
+    curl -sSL "${GHC_URL}.sig" -o ghc.tar.xz.sig; \
+    gpg --batch --keyserver keyserver.ubuntu.com --receive-keys "${GHC_RELEASE_KEY}"; \
+    gpg --batch --verify ghc.tar.xz.sig ghc.tar.xz; \
+    gpgconf --kill all; \
+    \
+    tar xf ghc.tar.xz; \
+    cd "ghc-${GHC}-aarch64-unknown-linux"; \
+    ./configure --prefix "/opt/ghc/${GHC}"; \
+    make install; \
+    \
+    rm -rf /tmp/*; \
+    \
+    "/opt/ghc/${GHC}/bin/ghc" --version
+
+# Install Haskell Language Server 2.15.0.0
+ARG HLS='2.15.0.0'
+ARG HLS_RELEASE_KEY='88B57FCF7DB53B4DB3BFA4B1588764FBE22D19C4'
+
+RUN set -eux; \
+    cd /tmp; \
+    HLS_URL="https://downloads.haskell.org/~hls/haskell-language-server-${HLS}/haskell-language-server-${HLS}-aarch64-linux-ubuntu2204.tar.xz"; \
+    HLS_SHA256='3eb1ffa13fee62d3d26afe7b7924af65da6865798afe7cca34571804a06c359f'; \
+    HLS_SHA256SUMS_URL="https://downloads.haskell.org/~hls/haskell-language-server-${HLS}/SHA256SUMS"; \
+    \
+    curl -sSL "${HLS_URL}" -o hls.tar.xz; \
+    echo "${HLS_SHA256} hls.tar.xz" | sha256sum --strict --check; \
+    \
+    curl -sSLO "${HLS_SHA256SUMS_URL}"; \
+    curl -sSLO "${HLS_SHA256SUMS_URL}.sig"; \
+    GNUPGHOME="$(mktemp -d)"; export GNUPGHOME; \
+    gpg --batch --keyserver hkps://keys.openpgp.org --receive-keys "${HLS_RELEASE_KEY}"; \
+    gpg --batch --keyserver hkps://keys.openpgp.org --receive-keys 9849506453CA97E75F505D054EF829564CA34FC8; \
+    gpg --batch --verify SHA256SUMS.sig SHA256SUMS; \
+    grep "${HLS_SHA256}  ./haskell-language-server-${HLS}-aarch64-linux-ubuntu2204.tar.xz" SHA256SUMS; \
+    gpgconf --kill all; \
+    \
+    tar -xf hls.tar.xz; \
+    HLS_DIR="$(tar tf hls.tar.xz | head -1 | cut -d'/' -f1)"; \
+    cp -r "${HLS_DIR}/bin"/* /usr/local/bin/; \
+    cp -r "${HLS_DIR}/lib" /usr/local/lib/haskell-language-server-${HLS}/; \
+    \
+    rm -rf /tmp/*; \
+    \
+    haskell-language-server-wrapper --version
+
+# Install Agda 2.8.0.1
+RUN set -eux; \
+    export PATH=/root/.cabal/bin:/root/.local/bin:/opt/ghc/${GHC}/bin:${PATH}; \
+    cabal update; \
+    cabal install Agda-2.8.0.1 --constraint="cryptonite -fixed" -j1; \
+    cp /root/.local/bin/agda /usr/local/bin/; \
+    rm -rf /root/.cabal/store /root/.cabal/packages /root/.cabal/dist-new /root/.cabal/logs /root/.local/state/cabal /root/.local/bin; \
+    agda --version
+
+# Install Agda Standard Library 2.4
+RUN set -eux; \
+    cd /usr/local; \
+    curl -L https://github.com/agda/agda-stdlib/archive/v2.4.tar.gz -o agda-stdlib.tar.gz; \
+    echo "dd0fab4519523d6c08cd9583a4f5eac38ab135a12ccdab1fb164c271075f6747 agda-stdlib.tar.gz" | sha256sum --strict --check; \
+    \
+    tar -zxf agda-stdlib.tar.gz; \
+    rm agda-stdlib.tar.gz; \
+    \
+    AGDA_DIR="$(agda --print-agda-app-dir)"; \
+    mkdir -p "$AGDA_DIR"; \
+    echo "/usr/local/agda-stdlib-2.4/standard-library.agda-lib" >> "$AGDA_DIR/libraries"; \
+    echo "standard-library" >> "$AGDA_DIR/defaults"; \
+    \
+    echo "Agda Standard Library v2.4 installed"
+
+# Install Agda Language Server v6
+RUN set -eux; \
+    export PATH=/root/.cabal/bin:/root/.local/bin:/opt/ghc/${GHC}/bin:${PATH}; \
+    \
+    cd /tmp; \
+    git clone --depth 1 --branch v6 https://github.com/agda/agda-language-server.git; \
+    cd agda-language-server; \
+    \
+    cabal v2-update; \
+    cabal v2-install --constraint="Agda == 2.8.0.1" -j1; \
+    \
+    cp /root/.local/bin/als /usr/local/bin/; \
+    \
+    cd /tmp; \
+    rm -rf agda-language-server; \
+    rm -rf /root/.cabal/store /root/.cabal/packages /root/.cabal/dist-new /root/.cabal/logs /root/.local/state/cabal /root/.local/bin; \
+    \
+    als --version
+
+# Install Swift 6.3.3
+ARG SWIFT_SIGNING_KEY=52BB7E3DE28A71BE22EC05FFEF80A866B47A981F
+ARG SWIFT_PLATFORM=ubuntu24.04
+ARG SWIFT_BRANCH=swift-6.3.3-release
+ARG SWIFT_VERSION=swift-6.3.3-RELEASE
+ARG SWIFT_WEBROOT=https://download.swift.org
+
+RUN set -eux; \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        binutils \
+        unzip \
+        gnupg2 && \
+    rm -rf /var/lib/apt/lists/*; \
+    \
+    ARCH_NAME="$(dpkg --print-architecture)"; \
+    case "${ARCH_NAME##*-}" in \
+        'amd64') OS_ARCH_SUFFIX='' ;; \
+        'arm64') OS_ARCH_SUFFIX='-aarch64' ;; \
+        *) echo >&2 "error: unsupported architecture: '$ARCH_NAME'"; exit 1 ;; \
+    esac; \
+    SWIFT_PLATFORM_WITH_ARCH="${SWIFT_PLATFORM}${OS_ARCH_SUFFIX}"; \
+    SWIFT_WEBDIR="$SWIFT_WEBROOT/$SWIFT_BRANCH/$(echo $SWIFT_PLATFORM_WITH_ARCH | tr -d .)"; \
+    SWIFT_BIN_URL="$SWIFT_WEBDIR/$SWIFT_VERSION/$SWIFT_VERSION-$SWIFT_PLATFORM_WITH_ARCH.tar.gz"; \
+    SWIFT_SIG_URL="$SWIFT_BIN_URL.sig"; \
+    \
+    export GNUPGHOME="$(mktemp -d)"; \
+    curl -fsSL "$SWIFT_BIN_URL" -o swift.tar.gz; \
+    curl -fsSL "$SWIFT_SIG_URL" -o swift.tar.gz.sig; \
+    gpg --batch --quiet --keyserver keyserver.ubuntu.com --recv-keys "$SWIFT_SIGNING_KEY"; \
+    gpg --batch --verify swift.tar.gz.sig swift.tar.gz; \
+    tar -xzf swift.tar.gz --directory / --strip-components=1; \
+    chmod -R o+r /usr/lib/swift; \
+    rm -rf "$GNUPGHOME" swift.tar.gz.sig swift.tar.gz; \
+    \
+    swift --version
+
+# Environment
+ENV PATH=/root/.cabal/bin:/root/.local/bin:/opt/ghc/${GHC}/bin:${PATH}
+
+# Verification
+RUN ghc --version && cabal --version && haskell-language-server-wrapper --version && agda --version && als --version && swift --version
+
+CMD ["/bin/bash"]
