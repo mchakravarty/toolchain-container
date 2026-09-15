@@ -29,5 +29,7 @@ We are using the following versions:
 
 **Note on Agda Language Server**: Although Agda Language Server v6 was tested with Agda 2.8.0, we build it with Agda 2.8.0.1 (which is compatible with GHC 9.14.1's base-4.22.0.0). Agda 2.8.0 requires base < 4.22, making it incompatible with our GHC version. The difference between Agda 2.8.0 and 2.8.0.1 is minimal and does not affect source code compatibility. All intermediate build products and downloaded packages are removed after installation to keep the container image size minimal.
 
+**Note on Installation Locations**: All tools (GHC, Cabal, Haskell Language Server, Agda, Agda Language Server, Swift) are installed under `/usr/bin` and `/usr/lib`. The Agda Standard Library is installed under `/usr/lib/agda-stdlib-2.4/`. This ensures consistency across all tool installations.
+
 **Note on Swift**: Swift 6.3.3 is installed from pre-compiled binaries provided by the Swift project. The installation uses the `ubuntu2404-aarch64` platform identifier to download the ARM64 version. The Ubuntu 24.04 binaries are generally compatible with our Ubuntu 26.04 base image. GPG signatures are verified using the Swift 6.x Release Signing Key. The toolchain includes SourceKit-LSP for language server support.
 

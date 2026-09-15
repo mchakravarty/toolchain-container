@@ -38,3 +38,9 @@ Use SHA hashes to check the integrity of downloaded binaries. Use cryptographic 
 
 Whenever you spot a security risk, inform the user.
 
+## General behaviour
+
+Before embarking on significant changes or tests (especially if they involve running or building containers), present a plan of what you want to do to the user. Refine the plan with the user and only execute it after confirmation from the user.
+
+During testing and experimenting, minimise the number of container builds as they can take a long time. Try to ammortise by reusing containers and working incrementally (instead of starting from scratch each time).
+

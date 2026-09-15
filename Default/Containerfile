@@ -45,7 +45,7 @@ RUN set -eux; \
     grep "${CABAL_INSTALL_SHA256}  \./${CABAL_INSTALL_TAR}" SHA256SUMS; \
     gpgconf --kill all; \
     \
-    tar -xf cabal-install.tar.xz -C /usr/local/bin; \
+    tar -xf cabal-install.tar.xz -C /usr/bin; \
     \
     rm -rf /tmp/*; \
     \
@@ -71,12 +71,12 @@ RUN set -eux; \
     \
     tar xf ghc.tar.xz; \
     cd "ghc-${GHC}-aarch64-unknown-linux"; \
-    ./configure --prefix "/opt/ghc/${GHC}"; \
+    ./configure --prefix "/usr"; \
     make install; \
-    \
+    ldconfig; \
     rm -rf /tmp/*; \
     \
-    "/opt/ghc/${GHC}/bin/ghc" --version
+    "/usr/bin/ghc" --version
 
 # Install Haskell Language Server 2.15.0.0
 ARG HLS='2.15.0.0'
@@ -102,25 +102,26 @@ RUN set -eux; \
     \
     tar -xf hls.tar.xz; \
     HLS_DIR="$(tar tf hls.tar.xz | head -1 | cut -d'/' -f1)"; \
-    cp -r "${HLS_DIR}/bin"/* /usr/local/bin/; \
-    cp -r "${HLS_DIR}/lib" /usr/local/lib/haskell-language-server-${HLS}/; \
-    \
+    cd "${HLS_DIR}"; \
+    make install PREFIX=/usr; \
+    cd /tmp; \
+    ldconfig; \
     rm -rf /tmp/*; \
-    \
-    haskell-language-server-wrapper --version
+    haskell-language-server-wrapper --version && \
+    haskell-language-server-9.14.1 --version
 
 # Install Agda 2.8.0.1
 RUN set -eux; \
-    export PATH=/root/.cabal/bin:/root/.local/bin:/opt/ghc/${GHC}/bin:${PATH}; \
+    export PATH=/root/.cabal/bin:/root/.local/bin:${PATH}; \
     cabal update; \
     cabal install Agda-2.8.0.1 --constraint="cryptonite -fixed" -j1; \
-    cp /root/.local/bin/agda /usr/local/bin/; \
+    cp /root/.local/bin/agda /usr/bin/; \
     rm -rf /root/.cabal/store /root/.cabal/packages /root/.cabal/dist-new /root/.cabal/logs /root/.local/state/cabal /root/.local/bin; \
     agda --version
 
 # Install Agda Standard Library 2.4
 RUN set -eux; \
-    cd /usr/local; \
+    cd /usr/lib; \
     curl -L https://github.com/agda/agda-stdlib/archive/v2.4.tar.gz -o agda-stdlib.tar.gz; \
     echo "dd0fab4519523d6c08cd9583a4f5eac38ab135a12ccdab1fb164c271075f6747 agda-stdlib.tar.gz" | sha256sum --strict --check; \
     \
@@ -129,14 +130,14 @@ RUN set -eux; \
     \
     AGDA_DIR="$(agda --print-agda-app-dir)"; \
     mkdir -p "$AGDA_DIR"; \
-    echo "/usr/local/agda-stdlib-2.4/standard-library.agda-lib" >> "$AGDA_DIR/libraries"; \
+    echo "/usr/lib/agda-stdlib-2.4/standard-library.agda-lib" >> "$AGDA_DIR/libraries"; \
     echo "standard-library" >> "$AGDA_DIR/defaults"; \
     \
     echo "Agda Standard Library v2.4 installed"
 
 # Install Agda Language Server v6
 RUN set -eux; \
-    export PATH=/root/.cabal/bin:/root/.local/bin:/opt/ghc/${GHC}/bin:${PATH}; \
+    export PATH=/root/.cabal/bin:/root/.local/bin:${PATH}; \
     \
     cd /tmp; \
     git clone --depth 1 --branch v6 https://github.com/agda/agda-language-server.git; \
@@ -145,7 +146,7 @@ RUN set -eux; \
     cabal v2-update; \
     cabal v2-install --constraint="Agda == 2.8.0.1" -j1; \
     \
-    cp /root/.local/bin/als /usr/local/bin/; \
+    cp /root/.local/bin/als /usr/bin/; \
     \
     cd /tmp; \
     rm -rf agda-language-server; \
@@ -191,7 +192,7 @@ RUN set -eux; \
     swift --version
 
 # Environment
-ENV PATH=/root/.cabal/bin:/root/.local/bin:/opt/ghc/${GHC}/bin:${PATH}
+ENV PATH=/root/.cabal/bin:/root/.local/bin:${PATH}
 
 # Verification
 RUN ghc --version && cabal --version && haskell-language-server-wrapper --version && agda --version && als --version && swift --version
