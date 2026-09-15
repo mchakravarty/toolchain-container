@@ -13,6 +13,8 @@ We are using the following versions:
 
 ## Installation details
 
+Important: `container build` must be given at least 4 CPUs and 16GB of memory for the build to succeed. Details below.
+
 | Tool | Version | Source | Method | Resource Requirements |
 |------|---------|-------|--------|----------------------|
 | GHC | 9.14.1 | [downloads.haskell.org/~ghc](https://downloads.haskell.org/~ghc/9.14.1/) | Pre-compiled binary (aarch64-deb12) | N/A |

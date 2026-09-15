@@ -38,6 +38,8 @@ Use SHA hashes to check the integrity of downloaded binaries. Use cryptographic 
 
 Whenever you spot a security risk, inform the user.
 
+Before working on a `Containerfile` in one of the subdirectories, read that subdirectories `README.md` for guidance on the specifics of that build.
+
 ## General behaviour
 
 Before embarking on significant changes or tests (especially if they involve running or building containers), present a plan of what you want to do to the user. Refine the plan with the user and only execute it after confirmation from the user.

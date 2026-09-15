@@ -110,14 +110,30 @@ RUN set -eux; \
     haskell-language-server-wrapper --version && \
     haskell-language-server-9.14.1 --version
 
-# Install Agda 2.8.0.1
+# Install Agda 2.8.0.1 and Agda Language Server v6
+# We combine these two, so that they can share intermediate build artefacts.
 RUN set -eux; \
     export PATH=/root/.cabal/bin:/root/.local/bin:${PATH}; \
+    \
     cabal update; \
-    cabal install Agda-2.8.0.1 --constraint="cryptonite -fixed" -j1; \
+    cabal install Agda-2.8.0.1 --constraint="cryptonite -fixed" -j4; \
     cp /root/.local/bin/agda /usr/bin/; \
+    \
+    cd /tmp; \
+    git clone --depth 1 --branch v6 https://github.com/agda/agda-language-server.git; \
+    cd agda-language-server; \
+    \
+    cabal v2-update; \
+    cabal v2-install --constraint="Agda == 2.8.0.1" -j4; \
+    \
+    cp /root/.local/bin/als /usr/bin/; \
+    \
+    cd /tmp; \
+    rm -rf agda-language-server; \
     rm -rf /root/.cabal/store /root/.cabal/packages /root/.cabal/dist-new /root/.cabal/logs /root/.local/state/cabal /root/.local/bin; \
-    agda --version
+    \
+    agda --version && \
+    als --version
 
 # Install Agda Standard Library 2.4
 RUN set -eux; \
@@ -134,25 +150,6 @@ RUN set -eux; \
     echo "standard-library" >> "$AGDA_DIR/defaults"; \
     \
     echo "Agda Standard Library v2.4 installed"
-
-# Install Agda Language Server v6
-RUN set -eux; \
-    export PATH=/root/.cabal/bin:/root/.local/bin:${PATH}; \
-    \
-    cd /tmp; \
-    git clone --depth 1 --branch v6 https://github.com/agda/agda-language-server.git; \
-    cd agda-language-server; \
-    \
-    cabal v2-update; \
-    cabal v2-install --constraint="Agda == 2.8.0.1" -j1; \
-    \
-    cp /root/.local/bin/als /usr/bin/; \
-    \
-    cd /tmp; \
-    rm -rf agda-language-server; \
-    rm -rf /root/.cabal/store /root/.cabal/packages /root/.cabal/dist-new /root/.cabal/logs /root/.local/state/cabal /root/.local/bin; \
-    \
-    als --version
 
 # Install Swift 6.3.3
 ARG SWIFT_SIGNING_KEY=52BB7E3DE28A71BE22EC05FFEF80A866B47A981F
