@@ -78,52 +78,20 @@ RUN set -eux; \
     \
     "/usr/bin/ghc" --version
 
-# Install Haskell Language Server 2.15.0.0
-ARG HLS='2.15.0.0'
-ARG HLS_RELEASE_KEY='88B57FCF7DB53B4DB3BFA4B1588764FBE22D19C4'
-
-RUN set -eux; \
-    cd /tmp; \
-    HLS_URL="https://downloads.haskell.org/~hls/haskell-language-server-${HLS}/haskell-language-server-${HLS}-aarch64-linux-ubuntu2204.tar.xz"; \
-    HLS_SHA256='3eb1ffa13fee62d3d26afe7b7924af65da6865798afe7cca34571804a06c359f'; \
-    HLS_SHA256SUMS_URL="https://downloads.haskell.org/~hls/haskell-language-server-${HLS}/SHA256SUMS"; \
-    \
-    curl -sSL "${HLS_URL}" -o hls.tar.xz; \
-    echo "${HLS_SHA256} hls.tar.xz" | sha256sum --strict --check; \
-    \
-    curl -sSLO "${HLS_SHA256SUMS_URL}"; \
-    curl -sSLO "${HLS_SHA256SUMS_URL}.sig"; \
-    GNUPGHOME="$(mktemp -d)"; export GNUPGHOME; \
-    gpg --batch --keyserver hkps://keys.openpgp.org --receive-keys "${HLS_RELEASE_KEY}"; \
-    gpg --batch --keyserver hkps://keys.openpgp.org --receive-keys 9849506453CA97E75F505D054EF829564CA34FC8; \
-    gpg --batch --verify SHA256SUMS.sig SHA256SUMS; \
-    grep "${HLS_SHA256}  ./haskell-language-server-${HLS}-aarch64-linux-ubuntu2204.tar.xz" SHA256SUMS; \
-    gpgconf --kill all; \
-    \
-    tar -xf hls.tar.xz; \
-    HLS_DIR="$(tar tf hls.tar.xz | head -1 | cut -d'/' -f1)"; \
-    cd "${HLS_DIR}"; \
-    make install PREFIX=/usr; \
-    cd /tmp; \
-    ldconfig; \
-    rm -rf /tmp/*; \
-    haskell-language-server-wrapper --version && \
-    haskell-language-server-9.14.1 --version
-
-# Install Agda 2.8.0.1 and Agda Language Server v6
+# Install Agda 2.8.0.1 and Agda Language Server v6 (from source)
 # We combine these two, so that they can share intermediate build artefacts.
 RUN set -eux; \
     export PATH=/root/.cabal/bin:/root/.local/bin:${PATH}; \
     \
     cabal update; \
-    cabal install Agda-2.8.0.1 --constraint="cryptonite -fixed" -j4; \
+    cabal install Agda-2.8.0.1 --constraint="cryptonite -fixed" -j6; \
     cp /root/.local/bin/agda /usr/bin/; \
     \
     cd /tmp; \
     git clone --depth 1 --branch v6 https://github.com/agda/agda-language-server.git; \
     cd agda-language-server; \
     \
-    cabal install --constraint="Agda == 2.8.0.1" -j4; \
+    cabal install --constraint="Agda == 2.8.0.1" -j6; \
     cp /root/.local/bin/als /usr/bin/; \
     \
     cd /tmp; \
@@ -148,6 +116,44 @@ RUN set -eux; \
     echo "standard-library" >> "$AGDA_DIR/defaults"; \
     \
     echo "Agda Standard Library v2.4 installed"
+
+# Install Haskell Language Server 2.15.0.0 (from source)
+# We build HLS after Agda, because we need to leave the dynamic libraries needed by HLS in Cabal's store.
+ARG HLS='2.15.0.0'
+ARG HLS_RELEASE_KEY='88B57FCF7DB53B4DB3BFA4B1588764FBE22D19C4'
+
+RUN set -eux; \
+    cd /tmp; \
+    HLS_URL="https://downloads.haskell.org/~hls/haskell-language-server-${HLS}/haskell-language-server-${HLS}-src.tar.gz"; \
+    HLS_SHA256='a6ecf9eeac802dfa358f151d4309803ca082671ed18195d1db0d60771a2159e2'; \
+    HLS_SHA256SUMS_URL="https://downloads.haskell.org/~hls/haskell-language-server-${HLS}/SHA256SUMS"; \
+    \
+    curl -sSL "${HLS_URL}" -o hls.tar.gz; \
+    echo "${HLS_SHA256} hls.tar.gz" | sha256sum --strict --check; \
+    \
+    curl -sSLO "${HLS_SHA256SUMS_URL}"; \
+    curl -sSLO "${HLS_SHA256SUMS_URL}.sig"; \
+    GNUPGHOME="$(mktemp -d)"; export GNUPGHOME; \
+    gpg --batch --keyserver hkps://keys.openpgp.org --receive-keys "${HLS_RELEASE_KEY}"; \
+    gpg --batch --keyserver hkps://keys.openpgp.org --receive-keys 9849506453CA97E75F505D054EF829564CA34FC8; \
+    gpg --batch --verify SHA256SUMS.sig SHA256SUMS; \
+    grep "${HLS_SHA256}  ./haskell-language-server-${HLS}-src.tar.gz" SHA256SUMS; \
+    gpgconf --kill all; \
+    \
+    tar -xf hls.tar.gz; \
+    HLS_DIR="$(tar tf hls.tar.gz | head -1 | cut -d'/' -f1)"; \
+    cd "${HLS_DIR}"; \
+    cabal install --install-method=copy --disable-profiling --disable-tests \
+      --flags="-test-exe -ghcide-bench -plugin-tutorial" --installdir=/usr/bin -j6; \
+    mv /usr/bin/haskell-language-server /usr/bin/haskell-language-server-9.14.1; \
+    cd /tmp; \
+    ldconfig; \
+    \
+    rm -rf ${HLS_DIR}; \
+    rm -rf /root/.cabal/packages /root/.cabal/dist-new /root/.cabal/logs /root/.local/bin; \
+    \
+    haskell-language-server-wrapper --version && \
+    haskell-language-server-9.14.1 --version
 
 # Install Swift 6.3.3
 ARG SWIFT_SIGNING_KEY=52BB7E3DE28A71BE22EC05FFEF80A866B47A981F
