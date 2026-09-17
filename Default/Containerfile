@@ -123,9 +123,7 @@ RUN set -eux; \
     git clone --depth 1 --branch v6 https://github.com/agda/agda-language-server.git; \
     cd agda-language-server; \
     \
-    cabal v2-update; \
-    cabal v2-install --constraint="Agda == 2.8.0.1" -j4; \
-    \
+    cabal install --constraint="Agda == 2.8.0.1" -j4; \
     cp /root/.local/bin/als /usr/bin/; \
     \
     cd /tmp; \
