@@ -19,7 +19,7 @@ Important: `container build` must be given at least 4 CPUs and 16GB of memory fo
 |------|---------|-------|--------|----------------------|
 | GHC | 9.14.1 | [downloads.haskell.org/~ghc](https://downloads.haskell.org/~ghc/9.14.1/) | Pre-compiled binary (aarch64-deb12) | N/A |
 | Cabal | 3.18.1.0 | [downloads.haskell.org/~cabal](https://downloads.haskell.org/~cabal/cabal-install-3.18.1.0/) | Pre-compiled binary (aarch64-linux-unknown) | N/A |
-| Haskell Language Server | 2.15.0.0 | [downloads.haskell.org/~hls](https://downloads.haskell.org/~hls/haskell-language-server-2.15.0.0/) | Pre-compiled binary (aarch64-linux-ubuntu2204) | N/A |
+| Haskell Language Server | 2.15.0.0 | [downloads.haskell.org/~hls](https://downloads.haskell.org/~hls/haskell-language-server-2.15.0.0/) | Compiled from source via Cabal | ~16GB RAM, ~15-20 min, 4 CPUs |
 | Agda | 2.8.0.1 | [GitHub Releases](https://github.com/agda/agda/releases/tag/v2.8.0.1) | Compiled from source via Cabal | ~16GB RAM, ~15-20 min, 4 CPUs |
 | Agda Standard Library | 2.4 | [GitHub Releases](https://github.com/agda/agda-stdlib/releases/tag/v2.4) | Pre-built library files | N/A |
 | Agda Language Server | v6 | [GitHub Releases](https://github.com/agda/agda-language-server/releases/tag/v6) | Compiled from source via Cabal | ~16GB RAM, ~20-30 min, 4 CPUs |
@@ -30,6 +30,8 @@ Important: `container build` must be given at least 4 CPUs and 16GB of memory fo
 **Note on Agda Standard Library**: The library is installed from the official GitHub release tarball and registered with Agda via the `libraries` and `defaults` configuration files in Agda's application directory (`/root/.config/agda/`).
 
 **Note on Agda Language Server**: Although Agda Language Server v6 was tested with Agda 2.8.0, we build it with Agda 2.8.0.1 (which is compatible with GHC 9.14.1's base-4.22.0.0). Agda 2.8.0 requires base < 4.22, making it incompatible with our GHC version. The difference between Agda 2.8.0 and 2.8.0.1 is minimal and does not affect source code compatibility. All intermediate build products and downloaded packages are removed after installation to keep the container image size minimal.
+
+**Note on Haskell Language Server**: Although pre-compiled binaries are available for HLS 2.15.0.0, we build it from source to avoid ABI fingerprint mismatches of dynamic libraries that can occur when using pre-built binaries with our specific GHC 9.14.1 installation. HLS is built after Agda to preserve the dynamic libraries in Cabal's store that HLS requires. 
 
 **Note on Installation Locations**: All tools (GHC, Cabal, Haskell Language Server, Agda, Agda Language Server, Swift) are installed under `/usr/bin` and `/usr/lib`. The Agda Standard Library is installed under `/usr/lib/agda-stdlib-2.4/`. This ensures consistency across all tool installations.
 
