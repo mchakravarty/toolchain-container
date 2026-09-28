@@ -14,3 +14,5 @@ RUN set -eux; \
       colour-accelerate-${COLOUR_ACCELERATE} mwc-random-accelerate-${MWC_RANDOM_ACCELERATE}; \
     \
     rm -rf /root/.cabal/packages /root/.cabal/dist-new /root/.cabal/logs /root/.local/bin; \
+
+# NB: We leave the `configuration.json` of the base image in place, as we didn't touch any tools.
