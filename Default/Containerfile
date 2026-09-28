@@ -198,4 +198,7 @@ ENV PATH=/root/.cabal/bin:/root/.local/bin:${PATH}
 # Verification
 RUN ghc --version && cabal --version && haskell-language-server-wrapper --version && agda --version && als --version && swift --version
 
+# Add configuration file
+COPY configuration.json /.applicative/configuration.json
+
 CMD ["/bin/bash"]
