@@ -7,11 +7,13 @@ ARG CONTAINERS_ACCELERATE=0.1.0.0
 ARG HASHABLE_ACCELERATE=0.1.0.0
 ARG COLOUR_ACCELERATE=0.4.0.0
 ARG MWC_RANDOM_ACCELERATE=0.2.0.0
+ARG CRITERION=1.6.5.0
 
 RUN set -eux; \
     cabal install -j6 accelerate-${ACCELERATE} accelerate-llvm-native-${ACCELERATE} \
       containers-accelerate-${CONTAINERS_ACCELERATE} hashable-accelerate-${HASHABLE_ACCELERATE} \
-      colour-accelerate-${COLOUR_ACCELERATE} mwc-random-accelerate-${MWC_RANDOM_ACCELERATE}; \
+      colour-accelerate-${COLOUR_ACCELERATE} mwc-random-accelerate-${MWC_RANDOM_ACCELERATE} \
+      criterion-${CRITERION}; \
     \
     rm -rf /root/.cabal/packages /root/.cabal/dist-new /root/.cabal/logs /root/.local/bin; \
 
