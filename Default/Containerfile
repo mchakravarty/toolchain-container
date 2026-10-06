@@ -201,4 +201,7 @@ RUN ghc --version && cabal --version && haskell-language-server-wrapper --versio
 # Add configuration file
 COPY configuration.json /.applicative/configuration.json
 
+# FIXME: temporary measure to fix problems with the long project path in the shell
+RUN echo "PS1='\\$ '" >>/root/.bashrc
+
 CMD ["/bin/bash"]
